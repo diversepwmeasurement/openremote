@@ -1,38 +1,24 @@
-# ---------------------------------------------------------------------------------------------------------------------s
-# This workflow handles starting/stopping/restarting an AWS EC2 instance by calling (.ci_cd/aws/start_stop_host.sh).
-# ---------------------------------------------------------------------------------------------------------------------
-name: Start/Stop Host
-
-on:
-  workflow_dispatch:
-    inputs:
-      HOST:
-        description: 'Host FQDN'
-        required: true
-      ACTION:
-        description: 'Action to perform'
-        type: choice
-        options:
-          - START
-          - STOP
-
 jobs:
-
   provision:
     name: Start
-    runs-on: ubuntu-latest
-
+    runs-on: self-hosted
     steps:
+    - continue-on-error: true
+      name: Checkout
+      uses: actions/checkout@v3
+    - continue-on-error: true
+      env:
+        ACTION: ${{ github.event.inputs.ACTION }}
+        AWS_ACCESS_KEY_ID: ${{ secrets._TEMP_AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets._TEMP_AWS_SECRET_ACCESS_KEY }}
+        HOST: ${{ github.event.inputs.HOST }}
+      name: Perform Action
+      run: 'chmod +x .ci_cd/aws/*
 
-      - name: Checkout
-        uses: actions/checkout@v3
+        .ci_cd/aws/start_stop_host.sh "$ACTION" "$HOST"
 
-      - name: Perform Action
-        run: |
-          chmod +x .ci_cd/aws/*
-          .ci_cd/aws/start_stop_host.sh "$ACTION" "$HOST"
-        env:
-          HOST: ${{ github.event.inputs.HOST }}
-          ACTION: ${{ github.event.inputs.ACTION }}
-          AWS_ACCESS_KEY_ID: ${{ secrets._TEMP_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets._TEMP_AWS_SECRET_ACCESS_KEY }}
+        '
+name: Start/Stop Host
+on:
+  repository_dispatch:
+    types: trigger-ga___start-stop-host.yml
